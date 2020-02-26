@@ -3,6 +3,18 @@ from sklearn import datasets
 
 batchUnit = 10 # batch size
 
+# network weights in dict data structure
+def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
+    layerNo.insert(0, inputlayer)
+    layerNo.append(outputlayer)
+    weight = dict()
+    for i in range(len(layerNo)-1):
+        for j in range(layerNo[i]):
+            for k in range(layerNo[i+1]):
+                weight[(i,j,k)] = 0
+    
+    return weight
+
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
@@ -21,6 +33,7 @@ def train(iris):
 
 def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
+    weight = initWeight(layerNo)
     iris = datasets.load_iris()
     train(iris)
 
