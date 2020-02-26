@@ -15,7 +15,7 @@ def batching(iris, counter):
 def main():
     iris = datasets.load_iris()
     # use batching() in a loop, feeding the batched datasets to the model
-    for i in range(len(iris.data)):
+    for i in range(len(iris.data)//batchUnit):
         dataTemp, targetTemp = batching(iris, i)
         # manipulate dataTemp and targetTemp here
 
