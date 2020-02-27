@@ -119,7 +119,6 @@ def train(iris, weight, bias, layerNo):
             weight = update_weight(layerNo, weight, delta_weight)
             bias = update_bias(bias, delta_bias)
         epoch = epoch + 1
-    print(error)
 
     
 
