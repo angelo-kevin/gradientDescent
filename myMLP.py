@@ -15,6 +15,16 @@ def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
     
     return weight
 
+def initBias(layerNo, inputlayer = 4, outputlayer = 1):
+    layerNo.insert(0, inputlayer)
+    layerNo.append(outputlayer)
+    bias = dict()
+    for i in range(len(layerNo)-1):
+        for j in range(layerNo[i+1]):
+            bias[(i,j)] = 0
+    
+    return bias
+
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
