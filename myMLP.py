@@ -3,6 +3,8 @@ import copy
 from sklearn import datasets
 
 batchUnit = 10 # batch size
+max_iter = 100
+ERROR_THRESHOLD = 0.00001
 
 def count_sigma(MLP_dictionary, i_layer,node, delta_matrix) :
     sum = 0
@@ -61,7 +63,7 @@ def initBias(layerNo, inputlayer = 4, outputlayer = 1):
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
-def error(target, output):
+def count_error(target, output):
     error = ((target-output)**2)/2
     return error  
 
@@ -97,17 +99,25 @@ def forward(record, weight, bias, layerNo, inputlayer = 4):
 
 def train(iris, weight, bias, layerNo):
     # use batching() in a loop, feeding the batched datasets to the model
-    for i in range(len(iris.data)//batchUnit):
-        delta_weight = copy.deepcopy(weight)
-        for keys in delta_weight.keys():
-            delta_weight[keys] = 0
-        dataTemp, targetTemp = batching(iris, i)
-        # manipulate dataTemp and targetTemp here
-        for i in range(len(dataTemp)):
-            output = forward(dataTemp[i], weight, bias, layerNo)
-            backward_phase(output, weight, len(layerNo),dataTemp[i],targetTemp[i], delta_weight, bias)
-        weight = update_weight(layerNo, weight, delta_weight)
-        
+    epoch = 1
+    error = 999
+    while (epoch <= max_iter and error >=ERROR_THRESHOLD  ) :
+        error = 0
+        for i in range(len(iris.data)//batchUnit):
+            delta_weight = copy.deepcopy(weight)
+            for keys in delta_weight.keys():
+                delta_weight[keys] = 0
+            dataTemp, targetTemp = batching(iris, i)
+            # manipulate dataTemp and targetTemp here
+            for i in range(len(dataTemp)):
+                output = forward(dataTemp[i], weight, bias, layerNo)
+                backward_phase(output, weight, len(layerNo),dataTemp[i],targetTemp[i], delta_weight, bias)
+                error = error + count_error(targetTemp[i],output[len(output)-1][0])
+            weight = update_weight(layerNo, weight, delta_weight)
+        epoch = epoch + 1
+        print(epoch)
+
+    
 
 def update_weight(layerNo, weight, delta_weight, learning_rate = 0.1):
     for i in range(len(layerNo)-1):
@@ -126,7 +136,7 @@ def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
     weight, layerNoForBias = initWeight(layerNo)
     bias = initBias(layerNoForBias)
-    iris = datasets.load_iris()
+    iris = datasets.load_iris() 
     train(iris, weight, bias, layerNo)
     print_model(weight)
 
