@@ -37,6 +37,7 @@ def backward_phase (feed_forward_output_matrix, MLP_dictionary, n_layer, x_data,
 
 # network weights in dict data structure
 def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
+    tempLayerNo = copy.deepcopy(layerNo)
     layerNo.insert(0, inputlayer)
     layerNo.append(outputlayer)
     weight = dict()
@@ -44,15 +45,15 @@ def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
         for j in range(layerNo[i]):
             for k in range(layerNo[i+1]):
                 weight[(i,j,k)] = 0
-    
-    return weight
+    return weight, tempLayerNo
 
 def initBias(layerNo, inputlayer = 4, outputlayer = 1):
-    layerNo.insert(0, inputlayer)
-    layerNo.append(outputlayer)
+    tempLayerNo = copy.deepcopy(layerNo)
+    tempLayerNo.insert(0, inputlayer)
+    tempLayerNo.append(outputlayer)
     bias = dict()
-    for i in range(len(layerNo)-1):
-        for j in range(layerNo[i+1]):
+    for i in range(len(tempLayerNo)-1):
+        for j in range(tempLayerNo[i+1]):
             bias[(i,j)] = 0
     
     return bias
@@ -72,7 +73,7 @@ def batching(iris, counter):
     
     return data, target
 
-def forward(record, weight, layerNo, inputlayer = 4):
+def forward(record, weight, bias, layerNo, inputlayer = 4):
     # Initialize output matrix
     output = []
     for i in range(len(layerNo) - 2):
@@ -87,22 +88,23 @@ def forward(record, weight, layerNo, inputlayer = 4):
             for k in range(int(layerNo[i + 1])):
                 for j in range(len(record)):
                     output[i][k] += weight[(i, j, k)] * record[j]
-                output[i][k] = sigmoid(output[i][k])
+                output[i][k] = sigmoid(output[i][k] + bias[(i, k)])
         else:
             for k in range(int(layerNo[i + 1])):
                 for j in range(int(layerNo[i])):
                     output[i][k] += weight[(i, j, k)] * output[i - 1][k - 1]
-                output[i][k] = sigmoid(output[i][k])
+                output[i][k] = sigmoid(output[i][k] + bias[(i, k)])
     
     return(output)
 
-def train(iris, weight, layerNo):
+def train(iris, weight, bias, layerNo):
     # use batching() in a loop, feeding the batched datasets to the model
     for i in range(len(iris.data)//batchUnit):
         dataTemp, targetTemp = batching(iris, i)
+        print(dataTemp)
         # manipulate dataTemp and targetTemp here
         for record in dataTemp:
-            forward(record, weight, layerNo)
+            forward(record, weight, bias, layerNo)
 
 def update_weight(layerNo, weight, delta_weight, learning_rate = 0.1):
     for i in range(len(layerNo)-1):
@@ -119,9 +121,10 @@ def print_model(weight):
 
 def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
-    weight = initWeight(layerNo)
+    weight, layerNoForBias = initWeight(layerNo)
+    bias = initBias(layerNoForBias)
     iris = datasets.load_iris()
-    train(iris, weight, layerNo)
+    train(iris, weight, bias, layerNo)
     print_model(weight)
 
 if __name__ == "__main__":
