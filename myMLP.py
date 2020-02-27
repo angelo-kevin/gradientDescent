@@ -24,7 +24,7 @@ def make_delta_matrix(feed_forward_output_matrix, target_data, MLP_dictionary):
             result_matrix[i][j] = feed_forward_output_matrix[i][j]*(1-feed_forward_output_matrix[i][j]) * count_sigma(MLP_dictionary,i,j,result_matrix)
     return result_matrix
                        
-def backward_phase (feed_forward_output_matrix, MLP_dictionary, n_layer, x_data, target_data , delta_weight_dictionary, bias_dictionary) :
+def backward_phase (feed_forward_output_matrix, MLP_dictionary, n_layer, x_data, target_data , delta_weight_dictionary, delta_bias_dictionary) :
     delta_matrix = make_delta_matrix(feed_forward_output_matrix, target_data, MLP_dictionary)
     for k in range (n_layer-1, 0, -1) :
         for keys in MLP_dictionary.keys():
@@ -34,9 +34,9 @@ def backward_phase (feed_forward_output_matrix, MLP_dictionary, n_layer, x_data,
         for keys in MLP_dictionary.keys():
             if keys[0] == 0 and keys[1]==i:
                 delta_weight_dictionary[keys] += 0.1*delta_matrix[0][keys[2]] *x_data[i]
-    for key in bias_dictionary.keys() : 
+    for key in delta_bias_dictionary.keys() : 
         if key[0]< n_layer-1:
-            bias_dictionary[key] = bias_dictionary[key] + 0.1* delta_matrix[key[0]][key[1]]*1 
+            delta_bias_dictionary[key] = delta_bias_dictionary[key] + 0.1* delta_matrix[key[0]][key[1]]*1 
 
 # network weights in dict data structure
 def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
@@ -101,21 +101,25 @@ def train(iris, weight, bias, layerNo):
     # use batching() in a loop, feeding the batched datasets to the model
     epoch = 1
     error = 999
+    delta_weight = copy.deepcopy(weight)
+    delta_bias = copy.deepcopy(bias)
     while (epoch <= max_iter and error >=ERROR_THRESHOLD  ) :
         error = 0
         for i in range(len(iris.data)//batchUnit):
-            delta_weight = copy.deepcopy(weight)
-            for keys in delta_weight.keys():
-                delta_weight[keys] = 0
+            for key in delta_bias.keys() :
+                delta_bias[key] = 0
+            for key in delta_weight.keys():
+                delta_weight[key] = 0
             dataTemp, targetTemp = batching(iris, i)
             # manipulate dataTemp and targetTemp here
             for i in range(len(dataTemp)):
                 output = forward(dataTemp[i], weight, bias, layerNo)
-                backward_phase(output, weight, len(layerNo),dataTemp[i],targetTemp[i], delta_weight, bias)
+                backward_phase(output, weight, len(layerNo),dataTemp[i],targetTemp[i], delta_weight, delta_bias)
                 error = error + count_error(targetTemp[i],output[len(output)-1][0])
             weight = update_weight(layerNo, weight, delta_weight)
+            bias = update_bias(bias, delta_bias)
         epoch = epoch + 1
-        print(epoch)
+    print(error)
 
     
 
@@ -125,6 +129,11 @@ def update_weight(layerNo, weight, delta_weight, learning_rate = 0.1):
             for k in range(layerNo[i+1]):
                 weight[(i,j,k)] = weight[(i,j,k)] - learning_rate * delta_weight[(i,j,k)]
     return weight
+
+def update_bias(bias, delta_bias, learning_rate = 0.1):
+    for keys in delta_bias.keys():
+        bias[keys] += delta_bias[keys]
+    return bias
 
 def print_model(weight):
     i = 0
