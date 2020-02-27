@@ -11,7 +11,7 @@ def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
     for i in range(len(layerNo)-1):
         for j in range(layerNo[i]):
             for k in range(layerNo[i+1]):
-                weight[(i,j,k)] = 1
+                weight[(i,j,k)] = 0
     
     return weight
 
