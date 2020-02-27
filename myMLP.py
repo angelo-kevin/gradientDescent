@@ -18,6 +18,9 @@ def initWeight(layerNo, inputlayer = 4, outputlayer = 1):
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
 
+def error(target, output):
+    return ((target-output)**2)/2  
+
 def batching(iris, counter):
     startIdx = counter*batchUnit
     data = iris.data[startIdx:(startIdx)+batchUnit]
@@ -31,11 +34,20 @@ def train(iris):
         dataTemp, targetTemp = batching(iris, i)
         # manipulate dataTemp and targetTemp here
 
+def update_weight(layerNo, weight, delta_weight, learning_rate = 0.1):
+    for i in range(len(layerNo)-1):
+        for j in range(layerNo[i]):
+            for k in range(layerNo[i+1]):
+                weight[(i,j,k)] = weight[(i,j,k)] - learning_rate * delta_weight[(i,j,k)]
+    return weight
+
 def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
     weight = initWeight(layerNo)
     iris = datasets.load_iris()
     train(iris)
+    print (weight)
+    print (len(weight))
 
 if __name__ == "__main__":
     main()
