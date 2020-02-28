@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 from sklearn import datasets
+import networkx as nx
+import matplotlib.pyplot as plt
 
 batchUnit = 10 # batch size
 max_iter = 100
@@ -134,11 +136,30 @@ def update_bias(bias, delta_bias, learning_rate = 0.1):
         bias[keys] += delta_bias[keys]
     return bias
 
-def print_model(weight):
-    i = 0
-    for keys, values in weight.items():
-        i += 1
-        print("w%d = %g" %(i, values))
+def print_model(layerNo, weight, inputlayer = 4, outputlayer = 1):
+    G = nx.Graph()
+    pos_layout = {}
+    for i in range(len(layerNo)-1):
+        for k in range(layerNo[i+1]):
+            for j in range(layerNo[i]):
+                if (i==0):
+                    source_node = "i"+str(j+1)
+                    target_node = "h"+str(i+1)+"."+str(k+1)
+                elif (i==len(layerNo) - 2):
+                    source_node = "h"+str(i)+"."+str(j+1)
+                    target_node = "o"+str(k + 1)
+                else:
+                    source_node = "h"+str(i)+"."+str(j+1)
+                    target_node = "h"+str(i+1)+"."+str(k+1)
+                G.add_edge(source_node, target_node, weight=round(weight[(i,j,k)], 5))
+                pos_layout[source_node] = [i, j]
+                pos_layout[target_node] = [i+1, k]
+    layout = pos_layout
+    nx.draw(G, layout)
+    nx.draw_networkx_nodes(G, layout)
+    nx.draw_networkx_labels(G, pos=layout)
+    nx.draw_networkx_edge_labels(G, pos=layout)
+    plt.show()
 
 def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
@@ -146,7 +167,7 @@ def main():
     bias = initBias(layerNoForBias)
     iris = datasets.load_iris() 
     train(iris, weight, bias, layerNo)
-    print_model(weight)
+    print_model(layerNo, weight)
 
 if __name__ == "__main__":
     main()
