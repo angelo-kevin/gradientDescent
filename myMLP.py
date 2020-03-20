@@ -4,8 +4,8 @@ from sklearn import datasets
 import networkx as nx
 import matplotlib.pyplot as plt
 
-batchUnit = 10 # batch size
-max_iter = 100
+batchUnit = 1 # batch size
+max_iter = 1000
 ERROR_THRESHOLD = 0.00001
 
 def count_sigma(MLP_dictionary, i_layer,node, delta_matrix) :
@@ -90,6 +90,10 @@ def forward(record, weight, bias, layerNo, inputlayer = 4):
         if (i == 0):
             for k in range(int(layerNo[i + 1])):
                 for j in range(len(record)):
+                    # print(i, j, k)
+                    # print(output[i][k])
+                    # print(weight[(i, j, k)])
+                    # print(record[j])
                     output[i][k] += weight[(i, j, k)] * record[j]
                 output[i][k] = sigmoid(output[i][k] + bias[(i, k)])
         else:
@@ -105,7 +109,8 @@ def train(iris, weight, bias, layerNo):
     error = 999
     delta_weight = copy.deepcopy(weight)
     delta_bias = copy.deepcopy(bias)
-    while (epoch <= max_iter and error >=ERROR_THRESHOLD  ) :
+    while (epoch <= max_iter and error >=ERROR_THRESHOLD):
+        out = []
         error = 0
         for i in range(len(iris.data)//batchUnit):
             for key in delta_bias.keys() :
@@ -116,11 +121,13 @@ def train(iris, weight, bias, layerNo):
             # manipulate dataTemp and targetTemp here
             for i in range(len(dataTemp)):
                 output = forward(dataTemp[i], weight, bias, layerNo)
+                out.append(output[len(output)-1][0])
                 backward_phase(output, weight, len(layerNo),dataTemp[i],targetTemp[i], delta_weight, delta_bias)
                 error = error + count_error(targetTemp[i],output[len(output)-1][0])
             weight = update_weight(layerNo, weight, delta_weight)
             bias = update_bias(bias, delta_bias)
         epoch = epoch + 1
+    print(out)
 
     
 
@@ -161,13 +168,46 @@ def print_model(layerNo, weight, inputlayer = 4, outputlayer = 1):
     nx.draw_networkx_edge_labels(G, pos=layout)
     plt.show()
 
+def predict(data, weight1, bias1, weight2, bias2, layerNo):
+    output = []
+    for record in data.data:
+        print(record)
+        out = forward(record, weight1, bias1, layerNo)
+        if (out[len(out)-1][0] < 0.5):
+            output.append(0)
+        else:
+            out = forward(record, weight2, bias2, layerNo)
+            if (out[len(out)-1][0] < 0.5):
+                output.append(1)
+            else:
+                output.append(2)
+    return output
+
 def main():
     layerNo = list(map(int, input("Jumlah node tiap layer, dipisahkan dengan space: ").split()))
-    weight, layerNoForBias = initWeight(layerNo)
-    bias = initBias(layerNoForBias)
-    iris = datasets.load_iris() 
-    train(iris, weight, bias, layerNo)
-    print_model(layerNo, weight)
+    weight1, layerNoForBias = initWeight(layerNo)
+    bias1 = initBias(layerNoForBias)
+    weight2 = copy.deepcopy(weight1)
+    bias2 = copy.deepcopy(bias1)
+    iris1 = datasets.load_iris()
+    iris2 = datasets.load_iris()
+
+    # Target: Setosa
+    iris1.target = (iris1.target==0).astype(np.int8)
+    print(iris1.target)
+    train(iris1, weight1, bias1, layerNo)
+
+    # Target: Versicolor
+    iris2.target = (iris2.target==1).astype(np.int8)
+    print(iris2.target)
+    train(iris2, weight2, bias2, layerNo)
+
+    # Test
+    output_test = predict(iris1, weight1, bias1, weight2, bias2, layerNo)
+    print(output_test)
+
+    print_model(layerNo, weight1)
+    print_model(layerNo, weight2)
 
 if __name__ == "__main__":
     main()
